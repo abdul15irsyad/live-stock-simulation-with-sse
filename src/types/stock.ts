@@ -1,4 +1,4 @@
-export interface StockData {
+export interface StockHistory {
   symbol: string;
   price: number;
   change: number;

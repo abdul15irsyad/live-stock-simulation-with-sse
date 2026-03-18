@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import {
   Text,
   Table,
@@ -15,59 +14,26 @@ import {
 } from '@mantine/core';
 import { IconArrowUpRight, IconArrowDownRight } from '@tabler/icons-react';
 import { AreaChart } from '@mantine/charts';
-import { StockData } from '@/types/stock';
+import { StockData } from '../(hooks)/use-stocks';
 
-export const StockDashboard = ({ symbol }: { symbol: string }) => {
-  const [history, setHistory] = useState<StockData[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-
-  const emptyPadding = Array(Math.max(0, 20 - history.length)).fill({
-    time: '',
-    price: null,
-  });
-
-  const chartData = [...emptyPadding, ...history].reverse().map((item) => ({
-    time: item.time,
-    price: item.price,
-  }));
-
-  useEffect(() => {
-    const eventSource = new EventSource(`/api/stocks?symbol=${symbol}`);
-
-    eventSource.onopen = () => setIsConnected(true);
-
-    eventSource.onmessage = (event) => {
-      const rawData = JSON.parse(event.data);
-      const newData: StockData = {
-        ...rawData,
-        change: parseFloat(rawData.change),
-      };
-      setHistory((prev) => [newData, ...prev]);
-    };
-
-    eventSource.onerror = () => {
-      setIsConnected(false);
-      eventSource.close();
-    };
-
-    return () => eventSource.close();
-  }, [symbol]);
-
-  const latest = history[0];
-  const openPrice = history[history.length - 1]?.price;
-  const percentFromOpen =
-    latest && openPrice ? ((latest.price - openPrice) / openPrice) * 100 : 0;
-  const isPositiveFromOpen = percentFromOpen >= 0;
-
+export const StockDashboard = ({
+  symbol,
+  history,
+  chartData,
+  latest,
+  openPrice,
+  isPositiveFromOpen,
+  percentFromOpen,
+}: StockData) => {
   return (
     <Paper withBorder p='xl' radius='md'>
       <Stack gap='xl'>
         <Box>
           {latest ? (
             <Group justify='space-between'>
-              <div>
+              <Box>
                 <Text size='md' c='dimmed' fw={700} tt='uppercase'>
-                  {latest.symbol}
+                  {symbol}
                 </Text>
                 <Text size='2rem' mb='xs' fw={900} style={{ lineHeight: 1 }}>
                   $ {latest?.price?.toFixed(2)}
@@ -75,7 +41,7 @@ export const StockDashboard = ({ symbol }: { symbol: string }) => {
                 <Text size='xs' c='gray.7' tt={'uppercase'}>
                   Last Close: $ {openPrice?.toFixed(2)}
                 </Text>
-              </div>
+              </Box>
               <Group gap='xs' align='center'>
                 <ThemeIcon
                   color={isPositiveFromOpen ? 'teal' : 'red'}

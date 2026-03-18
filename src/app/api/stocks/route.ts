@@ -1,43 +1,63 @@
-import { StockData } from '@/types/stock';
+import { currentPriceStocks } from '@/constants/stocks';
+import { StockHistory } from '@/types/stock';
 import { randomInt } from '@/utils/number';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const currentPriceStocks: Record<string, number> = {
-  AAPL: 150,
-  META: 600,
-  TSLA: 300,
-};
-
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const symbol = searchParams.get('symbol') ?? 'AAPL';
+  const symbolsParam = searchParams.get('symbols');
+  if (!symbolsParam)
+    return new Response('Missing symbols parameter', { status: 400 });
+
+  const symbols = symbolsParam
+    .split(',')
+    .map((symbol) => symbol.trim())
+    .filter((symbol) => symbol);
 
   const stream = new ReadableStream({
     start(controller) {
-      let currentPrice = currentPriceStocks[symbol];
-      const data: StockData = {
-        symbol,
-        price: currentPrice,
-        change: 0,
-        time: new Date().toLocaleTimeString(),
-      };
+      const currentPrices: Record<string, number> = {};
+      const initialData: StockHistory[] = [];
 
-      controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+      symbols.forEach((symbol) => {
+        if (currentPriceStocks[symbol]) {
+          currentPrices[symbol] = currentPriceStocks[symbol];
+          initialData.push({
+            symbol,
+            price: currentPrices[symbol],
+            change: 0,
+            time: new Date().toLocaleTimeString(),
+          });
+        }
+      });
+
+      // Send initial data for all symbols
+      controller.enqueue(`data: ${JSON.stringify(initialData)}\n\n`);
 
       const timer = setInterval(() => {
-        const change = parseFloat((randomInt(-200, 200) / 100).toFixed(2));
-        currentPrice = parseFloat((currentPrice + change).toFixed(2));
+        const updatedData: StockHistory[] = [];
 
-        const data: StockData = {
-          symbol,
-          price: currentPrice,
-          change: change,
-          time: new Date().toLocaleTimeString(),
-        };
+        symbols.forEach((symbol) => {
+          if (currentPrices[symbol] !== undefined) {
+            const change = parseFloat((randomInt(-200, 200) / 100).toFixed(2));
+            currentPrices[symbol] = parseFloat(
+              (currentPrices[symbol] + change).toFixed(2),
+            );
 
-        controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+            updatedData.push({
+              symbol,
+              price: currentPrices[symbol],
+              change: change,
+              time: new Date().toLocaleTimeString(),
+            });
+          }
+        });
+
+        if (updatedData.length > 0) {
+          controller.enqueue(`data: ${JSON.stringify(updatedData)}\n\n`);
+        }
       }, 3000);
 
       req.signal.onabort = () => {
