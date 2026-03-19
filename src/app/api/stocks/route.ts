@@ -1,4 +1,4 @@
-import { currentPriceStocks } from '@/constants/stocks';
+import { stocks } from '@/constants/stocks';
 import { StockHistory } from '@/types/stock';
 import { randomInt } from '@/utils/number';
 import { NextRequest } from 'next/server';
@@ -22,8 +22,10 @@ export async function GET(req: NextRequest) {
       const initialData: StockHistory[] = [];
 
       symbols.forEach((symbol) => {
-        if (currentPriceStocks[symbol]) {
-          currentPrices[symbol] = currentPriceStocks[symbol];
+        const currentPrice =
+          stocks.find((stock) => symbol === stock.symbol)?.currentPrice ?? 0;
+        if (currentPrice) {
+          currentPrices[symbol] = currentPrice;
           initialData.push({
             symbol,
             price: currentPrices[symbol],
@@ -32,36 +34,37 @@ export async function GET(req: NextRequest) {
           });
         }
       });
-
-      // Send initial data for all symbols
       controller.enqueue(`data: ${JSON.stringify(initialData)}\n\n`);
 
-      const timer = setInterval(() => {
-        const updatedData: StockHistory[] = [];
+      const timers: Record<string, NodeJS.Timeout> = {};
+      symbols.forEach((symbol) => {
+        timers[symbol] = setInterval(
+          () => {
+            if (currentPrices[symbol] === undefined) return;
 
-        symbols.forEach((symbol) => {
-          if (currentPrices[symbol] !== undefined) {
             const change = parseFloat((randomInt(-200, 200) / 100).toFixed(2));
             currentPrices[symbol] = parseFloat(
               (currentPrices[symbol] + change).toFixed(2),
             );
 
-            updatedData.push({
-              symbol,
-              price: currentPrices[symbol],
-              change: change,
-              time: new Date().toLocaleTimeString(),
-            });
-          }
-        });
-
-        if (updatedData.length > 0) {
-          controller.enqueue(`data: ${JSON.stringify(updatedData)}\n\n`);
-        }
-      }, 3000);
+            const updatedDatas: StockHistory[] = [
+              {
+                symbol,
+                price: currentPrices[symbol],
+                change: change,
+                time: new Date().toLocaleTimeString(),
+              },
+            ];
+            controller.enqueue(`data: ${JSON.stringify(updatedDatas)}\n\n`);
+          },
+          randomInt(2000, 5000),
+        );
+      });
 
       req.signal.onabort = () => {
-        clearInterval(timer);
+        Object.values(timers).map((timer) => {
+          clearInterval(timer);
+        });
         controller.close();
       };
     },

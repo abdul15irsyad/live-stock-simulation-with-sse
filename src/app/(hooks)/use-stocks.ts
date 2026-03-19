@@ -1,23 +1,11 @@
-'use client';
+import { StockData, StockHistory, StockId } from '@/types/stock';
+import { useState, useEffect, useMemo } from 'react';
 
-import { useEffect, useMemo, useState } from 'react';
-import { StockHistory } from '@/types/stock';
-
-export type StockData = {
-  symbol: string;
-  history: StockHistory[];
-  isConnected: boolean;
-  chartData: {
-    time: string;
-    price: number | null;
-  }[];
-  latest: StockHistory;
-  openPrice: number;
-  percentFromOpen: number;
-  isPositiveFromOpen: boolean;
-};
-
-export const useStocksWithSplitSSE = ({ symbols }: { symbols: string[] }) => {
+export const useStocks = ({
+  stocks,
+}: {
+  stocks: StockId[];
+}): { datas: StockData[] } => {
   const [stockState, setStockState] = useState<
     Record<
       string,
@@ -29,118 +17,9 @@ export const useStocksWithSplitSSE = ({ symbols }: { symbols: string[] }) => {
   >({});
 
   useEffect(() => {
-    if (!symbols.length) return;
+    if (!stocks.length) return;
 
-    const sources: Record<string, EventSource> = {};
-
-    symbols.forEach((symbol) => {
-      const es = new EventSource(`/api/stock?symbol=${symbol}`);
-      sources[symbol] = es;
-
-      es.onopen = () => {
-        setStockState((prev) => ({
-          ...prev,
-          [symbol]: {
-            history: prev[symbol]?.history || [],
-            isConnected: true,
-          },
-        }));
-      };
-
-      es.onmessage = (event) => {
-        const raw = JSON.parse(event.data) as StockHistory;
-
-        const newData: StockHistory = {
-          ...raw,
-          change: parseFloat(raw.change.toString()),
-        };
-
-        setStockState((prev) => {
-          const prevState = prev[symbol] || {
-            history: [],
-            isConnected: true,
-          };
-
-          return {
-            ...prev,
-            [symbol]: {
-              ...prevState,
-              history: [newData, ...prevState.history],
-            },
-          };
-        });
-      };
-
-      es.onerror = () => {
-        setStockState((prev) => ({
-          ...prev,
-          [symbol]: {
-            ...(prev[symbol] || { history: [] }),
-            isConnected: false,
-          },
-        }));
-        es.close();
-      };
-    });
-
-    return () => {
-      Object.values(sources).forEach((es) => es.close());
-    };
-  }, [symbols]);
-
-  const datas = useMemo(() => {
-    return symbols.map((symbol) => {
-      const state = stockState[symbol] || { history: [], isConnected: false };
-      const history = state.history;
-
-      const emptyPadding = Array(Math.max(0, 20 - history.length)).fill({
-        time: '',
-        price: null,
-      });
-
-      const chartData = [...emptyPadding, ...history].reverse().map((item) => ({
-        time: item.time,
-        price: item.price,
-      }));
-
-      const latest = history[0];
-      const openPrice = history[history.length - 1]?.price;
-
-      const percentFromOpen =
-        latest && openPrice
-          ? ((latest.price - openPrice) / openPrice) * 100
-          : 0;
-
-      return {
-        symbol,
-        history,
-        isConnected: state.isConnected,
-        chartData,
-        latest,
-        openPrice,
-        percentFromOpen,
-        isPositiveFromOpen: percentFromOpen >= 0,
-      };
-    });
-  }, [stockState, symbols]);
-
-  return { datas };
-};
-
-export const useStocksWithMergeSSE = ({ symbols }: { symbols: string[] }) => {
-  const [stockState, setStockState] = useState<
-    Record<
-      string,
-      {
-        history: StockHistory[];
-        isConnected: boolean;
-      }
-    >
-  >({});
-
-  useEffect(() => {
-    if (!symbols.length) return;
-
+    const symbols = stocks.map((stock) => stock.symbol);
     const query = symbols.map(encodeURIComponent).join(',');
     const es = new EventSource(`/api/stocks?symbols=${query}`);
 
@@ -199,10 +78,10 @@ export const useStocksWithMergeSSE = ({ symbols }: { symbols: string[] }) => {
     return () => {
       es.close();
     };
-  }, [symbols]);
+  }, [stocks]);
 
   const datas = useMemo(() => {
-    return symbols.map((symbol) => {
+    return stocks.map(({ name, symbol }) => {
       const state = stockState[symbol] || { history: [], isConnected: false };
       const history = state.history;
 
@@ -224,7 +103,8 @@ export const useStocksWithMergeSSE = ({ symbols }: { symbols: string[] }) => {
           ? ((latest.price - openPrice) / openPrice) * 100
           : 0;
 
-      return {
+      const stockData: StockData = {
+        name,
         symbol,
         history,
         isConnected: state.isConnected,
@@ -234,8 +114,9 @@ export const useStocksWithMergeSSE = ({ symbols }: { symbols: string[] }) => {
         percentFromOpen,
         isPositiveFromOpen: percentFromOpen >= 0,
       };
+      return stockData;
     });
-  }, [stockState, symbols]);
+  }, [stockState, stocks]);
 
   return { datas };
 };

@@ -1,4 +1,4 @@
-import { currentPriceStocks } from '@/constants/stocks';
+import { stocks } from '@/constants/stocks';
 import { StockHistory } from '@/types/stock';
 import { randomInt } from '@/utils/number';
 import { NextRequest } from 'next/server';
@@ -12,29 +12,34 @@ export async function GET(req: NextRequest) {
 
   const stream = new ReadableStream({
     start(controller) {
-      let currentPrice = currentPriceStocks[symbol];
-      const data: StockHistory = {
-        symbol,
-        price: currentPrice,
-        change: 0,
-        time: new Date().toLocaleTimeString(),
-      };
-
-      controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
-
-      const timer = setInterval(() => {
-        const change = parseFloat((randomInt(-200, 200) / 100).toFixed(2));
-        currentPrice = parseFloat((currentPrice + change).toFixed(2));
-
+      let currentPrice =
+        stocks.find((stock) => symbol === stock.symbol)?.currentPrice ?? 0;
+      if (currentPrice) {
         const data: StockHistory = {
           symbol,
           price: currentPrice,
-          change: change,
+          change: 0,
           time: new Date().toLocaleTimeString(),
         };
-
         controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
-      }, 3000);
+      }
+
+      const timer = setInterval(
+        () => {
+          const change = parseFloat((randomInt(-200, 200) / 100).toFixed(2));
+          currentPrice = parseFloat((currentPrice + change).toFixed(2));
+
+          const data: StockHistory = {
+            symbol,
+            price: currentPrice,
+            change: change,
+            time: new Date().toLocaleTimeString(),
+          };
+
+          controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+        },
+        randomInt(3000, 5000),
+      );
 
       req.signal.onabort = () => {
         clearInterval(timer);
