@@ -23,6 +23,8 @@ export const useStocksWithMergeSSE = ({
     const query = symbols.map(encodeURIComponent).join(',');
     const eventSource = new EventSource(`/api/stocks?symbols=${query}`);
 
+    window.addEventListener('beforeunload', () => eventSource.close());
+
     eventSource.onopen = () => {
       setStockState((prev) => {
         const next = { ...prev };
@@ -76,6 +78,7 @@ export const useStocksWithMergeSSE = ({
     };
 
     return () => {
+      window.addEventListener('beforeunload', () => eventSource.close());
       eventSource.close();
     };
   }, [stocks]);

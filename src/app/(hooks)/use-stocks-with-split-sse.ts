@@ -81,7 +81,7 @@ export const useStocksWithSplitSSE = ({
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      Object.values(eventSources).forEach((eventSource) => eventSource.close());
+      handleBeforeUnload();
     };
   }, [stocks]);
 
