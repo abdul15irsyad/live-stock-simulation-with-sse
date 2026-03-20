@@ -1,7 +1,9 @@
-import { Group, ThemeIcon, Stack, Title } from '@mantine/core';
-import { IconActivity } from '@tabler/icons-react';
+import { Group, ThemeIcon, Stack, Title, Button } from '@mantine/core';
+import { IconActivity, IconExternalLink } from '@tabler/icons-react';
+import { usePathname } from 'next/navigation';
 
 export const PageTitle = () => {
+  const pathname = usePathname();
   return (
     <Group justify='space-between'>
       <Group>
@@ -13,6 +15,32 @@ export const PageTitle = () => {
             Stock Simulation
           </Title>
         </Stack>
+      </Group>
+      <Group>
+        {pathname === '/split' && (
+          <Button
+            leftSection={<IconExternalLink size='1rem' />}
+            radius='md'
+            color='blue'
+            variant='outline'
+            component='a'
+            href='/merge'
+          >
+            Go to Merge SSE
+          </Button>
+        )}
+        {pathname === '/merge' && (
+          <Button
+            leftSection={<IconExternalLink size='1rem' />}
+            radius='md'
+            color='blue'
+            variant='outline'
+            component='a'
+            href='/split'
+          >
+            Go to Split SSE
+          </Button>
+        )}
       </Group>
     </Group>
   );

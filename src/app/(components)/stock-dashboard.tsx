@@ -27,7 +27,7 @@ export const StockDashboard = ({
   percentFromOpen,
 }: StockData) => {
   return (
-    <Paper withBorder p='xl' radius='md'>
+    <Paper withBorder p='xl' radius='lg'>
       <Stack gap='xl'>
         <Box>
           {latest ? (

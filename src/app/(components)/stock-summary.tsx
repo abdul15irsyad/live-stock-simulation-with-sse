@@ -16,10 +16,12 @@ import {
 import { StockData } from '@/types/stock';
 
 export const StockSummary = ({
+  index,
   stockData,
   isActive,
   onClick,
 }: {
+  index: number;
   stockData: StockData;
   isActive: boolean;
   onClick: () => void;
@@ -39,20 +41,26 @@ export const StockSummary = ({
     percentFromOpen > 0 ? 'teal' : percentFromOpen < 0 ? 'red' : 'gray';
   return (
     <Box
+      miw='fit-content'
       ref={ref}
       onClick={onClick}
       bg={isActive ? 'gray.1' : hovered ? 'gray.0' : undefined}
       p={'lg'}
-      bdrs={'md'}
-      bd={`1px solid ${isActive ? theme.colors.gray[4] : theme.colors.gray[4]}`}
+      // pt={'xl'}
+      bdrs={'lg'}
+      bd={`1px solid ${theme.colors.gray[4]}`}
       style={{
         userSelect: 'none',
         cursor: 'pointer',
+        position: 'relative',
+        alignItems: 'center',
       }}
+      display={'flex'}
     >
-      <Group miw={'200px'} justify='space-between'>
+      <Group miw={'200px'} justify='space-between' gap='xl' align='center'>
         <Stack gap='0rem'>
           <Text size={'1rem'} fw={700}>
+            <span>{index + 1}. </span>
             {name}
           </Text>
           <Text size={'sm'} c='gray.6'>
@@ -87,7 +95,7 @@ export const StockSummary = ({
             </Text>
           </Group>
         ) : (
-          <Loader color='gray.5' type='dots' size='sm' />
+          <Loader color='gray.4' type='dots' size='sm' />
         )}
       </Group>
     </Box>

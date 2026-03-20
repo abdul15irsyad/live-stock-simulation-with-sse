@@ -21,19 +21,19 @@ export const useStocksWithSplitSSE = ({
   useEffect(() => {
     if (!stocks.length) return;
 
-    const sources: Record<string, EventSource> = {};
+    const eventSources: Record<string, EventSource> = {};
 
     const handleBeforeUnload = () => {
-      Object.values(sources).forEach((es) => es.close());
+      Object.values(eventSources).forEach((eventSource) => eventSource.close());
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     stocks.forEach(({ symbol }) => {
-      const es = new EventSource(`/api/stock?symbol=${symbol}`);
-      sources[symbol] = es;
+      const eventSource = new EventSource(`/api/stock?symbol=${symbol}`);
+      eventSources[symbol] = eventSource;
 
-      es.onopen = () => {
+      eventSource.onopen = () => {
         setStockState((prev) => ({
           ...prev,
           [symbol]: {
@@ -43,7 +43,7 @@ export const useStocksWithSplitSSE = ({
         }));
       };
 
-      es.onmessage = (event) => {
+      eventSource.onmessage = (event) => {
         const raw = JSON.parse(event.data) as StockHistory;
 
         const newData: StockHistory = {
@@ -67,7 +67,7 @@ export const useStocksWithSplitSSE = ({
         });
       };
 
-      es.onerror = () => {
+      eventSource.onerror = () => {
         setStockState((prev) => ({
           ...prev,
           [symbol]: {
@@ -75,13 +75,13 @@ export const useStocksWithSplitSSE = ({
             isConnected: false,
           },
         }));
-        es.close();
+        eventSource.close();
       };
     });
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      Object.values(sources).forEach((es) => es.close());
+      Object.values(eventSources).forEach((eventSource) => eventSource.close());
     };
   }, [stocks]);
 

@@ -1,7 +1,7 @@
 import { StockData, StockHistory, StockId } from '@/types/stock';
 import { useState, useEffect, useMemo } from 'react';
 
-export const useStocks = ({
+export const useStocksWithMergeSSE = ({
   stocks,
 }: {
   stocks: StockId[];
@@ -21,9 +21,9 @@ export const useStocks = ({
 
     const symbols = stocks.map((stock) => stock.symbol);
     const query = symbols.map(encodeURIComponent).join(',');
-    const es = new EventSource(`/api/stocks?symbols=${query}`);
+    const eventSource = new EventSource(`/api/stocks?symbols=${query}`);
 
-    es.onopen = () => {
+    eventSource.onopen = () => {
       setStockState((prev) => {
         const next = { ...prev };
         symbols.forEach((symbol) => {
@@ -36,7 +36,7 @@ export const useStocks = ({
       });
     };
 
-    es.onmessage = (event) => {
+    eventSource.onmessage = (event) => {
       const raw = JSON.parse(event.data) as StockHistory[];
 
       const newData = raw.map((item) => ({
@@ -61,7 +61,7 @@ export const useStocks = ({
       });
     };
 
-    es.onerror = () => {
+    eventSource.onerror = () => {
       setStockState((prev) => {
         const next = { ...prev };
         symbols.forEach((symbol) => {
@@ -72,11 +72,11 @@ export const useStocks = ({
         });
         return next;
       });
-      es.close();
+      eventSource.close();
     };
 
     return () => {
-      es.close();
+      eventSource.close();
     };
   }, [stocks]);
 

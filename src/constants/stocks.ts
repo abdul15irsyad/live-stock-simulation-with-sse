@@ -9,9 +9,9 @@ export const stocks: { symbol: string; name: string; currentPrice?: number }[] =
     { symbol: 'GOOG', name: 'Alphabet Inc.', currentPrice: 200 },
     { symbol: 'AMZN', name: 'Amazon.com Inc.', currentPrice: 180 },
     { symbol: 'NVDA', name: 'NVIDIA Corp.', currentPrice: 900 },
-    // { symbol: 'NFLX', name: 'Netflix Inc.', currentPrice: 500 },
-    // { symbol: 'DIS', name: 'Walt Disney Co.', currentPrice: 120 },
-    // { symbol: 'INTC', name: 'Intel Corp.', currentPrice: 45 },
+    { symbol: 'NFLX', name: 'Netflix Inc.', currentPrice: 500 },
+    { symbol: 'DIS', name: 'Walt Disney Co.', currentPrice: 120 },
+    { symbol: 'INTC', name: 'Intel Corp.', currentPrice: 45 },
   ];
 
 export const symbols = stocks.map((stock) => stock.symbol);
