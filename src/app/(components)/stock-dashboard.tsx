@@ -15,6 +15,7 @@ import {
 import { IconArrowUpRight, IconArrowDownRight } from '@tabler/icons-react';
 import { AreaChart } from '@mantine/charts';
 import { StockData } from '@/types/stock';
+import dayjs from 'dayjs';
 
 export const StockDashboard = ({
   name,
@@ -115,7 +116,9 @@ export const StockDashboard = ({
               {history?.slice(0, 5)?.map((item, idx) => (
                 <Table.Tr key={idx}>
                   <Table.Td>
-                    <Text size='sm'>{item.time}</Text>
+                    <Text size='sm'>
+                      {dayjs(item.time).format('YYYY-MM-DD HH:mm:ss')}
+                    </Text>
                   </Table.Td>
                   <Table.Td>
                     <Badge variant='outline'>{item.symbol}</Badge>

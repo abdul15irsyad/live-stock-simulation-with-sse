@@ -1,6 +1,7 @@
 import { stocks } from '@/constants/stocks';
 import { StockHistory } from '@/types/stock';
 import { randomInt } from '@/utils/number';
+import dayjs from 'dayjs';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
           symbol,
           price: currentPrice,
           change: 0,
-          time: new Date().toLocaleTimeString(),
+          time: dayjs().toISOString(),
         };
         controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
       }
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
             symbol,
             price: currentPrice,
             change: change,
-            time: new Date().toLocaleTimeString(),
+            time: dayjs().toISOString(),
           };
 
           controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
