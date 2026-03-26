@@ -5,6 +5,7 @@ import {
   Stack,
   Text,
   ThemeIcon,
+  Tooltip,
   useMantineTheme,
 } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
@@ -12,6 +13,7 @@ import {
   IconArrowUpRight,
   IconArrowDownRight,
   IconMinus,
+  IconExclamationCircle,
 } from '@tabler/icons-react';
 import { StockData } from '@/types/stock';
 
@@ -36,6 +38,7 @@ export const StockSummary = ({
     percentFromOpen,
     isPositiveFromOpen,
     openPrice,
+    isTimeout,
   } = stockData;
   const moveColor =
     percentFromOpen > 0 ? 'teal' : percentFromOpen < 0 ? 'red' : 'gray';
@@ -46,7 +49,6 @@ export const StockSummary = ({
       onClick={onClick}
       bg={isActive ? 'gray.1' : hovered ? 'gray.0' : undefined}
       p={'lg'}
-      // pt={'xl'}
       bdrs={'lg'}
       bd={`1px solid ${theme.colors.gray[4]}`}
       style={{
@@ -66,7 +68,7 @@ export const StockSummary = ({
           <Text size={'sm'} c='gray.6'>
             {symbol}
           </Text>
-          {history?.length > 0 && (
+          {(history ?? [])?.length > 0 && (
             <Text size={'sm'} c='gray.6'>
               $ {latest?.price?.toFixed(2)}
             </Text>
@@ -94,8 +96,19 @@ export const StockSummary = ({
               </span>
             </Text>
           </Group>
+        ) : !isTimeout ? (
+          <>
+            {isTimeout && 'Timeout'}
+            <Loader color='gray.4' type='dots' size='sm' />
+          </>
         ) : (
-          <Loader color='gray.4' type='dots' size='sm' />
+          <Tooltip label='connection timeout' radius='md' withArrow>
+            <IconExclamationCircle
+              size='1.5rem'
+              color={theme.colors.orange[4]}
+              stroke={1.5}
+            />
+          </Tooltip>
         )}
       </Group>
     </Box>

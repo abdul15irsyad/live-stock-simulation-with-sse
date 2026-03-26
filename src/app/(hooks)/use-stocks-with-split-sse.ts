@@ -1,22 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { StockData, StockHistory, StockId } from '@/types/stock';
+import { StockData, StockHistory, StockId, StockState } from '@/types/stock';
 
 export const useStocksWithSplitSSE = ({
   stocks,
 }: {
   stocks: StockId[];
 }): { datas: StockData[] } => {
-  const [stockState, setStockState] = useState<
-    Record<
-      string,
-      {
-        history: StockHistory[];
-        isConnected: boolean;
-      }
-    >
-  >({});
+  const [stockState, setStockState] = useState<StockState>({});
 
   useEffect(() => {
     if (!stocks.length) return;
@@ -32,8 +24,22 @@ export const useStocksWithSplitSSE = ({
     stocks.forEach(({ symbol }) => {
       const eventSource = new EventSource(`/api/stock?symbol=${symbol}`);
       eventSources[symbol] = eventSource;
+      const timeoutTimer = setTimeout(() => {
+        if (eventSource.readyState !== EventSource.OPEN) {
+          console.error(`sse ${symbol} timeout`);
+          setStockState((prev) => ({
+            ...prev,
+            [symbol]: {
+              isConnected: false,
+              isTimeout: true,
+            },
+          }));
+          eventSource.close();
+        }
+      }, 5000);
 
       eventSource.onopen = () => {
+        clearTimeout(timeoutTimer);
         setStockState((prev) => ({
           ...prev,
           [symbol]: {
@@ -61,7 +67,7 @@ export const useStocksWithSplitSSE = ({
             ...prev,
             [symbol]: {
               ...prevState,
-              history: [newData, ...prevState.history],
+              history: [newData, ...(prevState.history ?? [])],
             },
           };
         });
@@ -88,7 +94,7 @@ export const useStocksWithSplitSSE = ({
   const datas = useMemo(() => {
     return stocks?.map(({ name, symbol }) => {
       const state = stockState[symbol] || { history: [], isConnected: false };
-      const history = state.history;
+      const history = state.history ?? [];
 
       const emptyPadding = Array(Math.max(0, 20 - history.length)).fill({
         time: '',
@@ -109,10 +115,10 @@ export const useStocksWithSplitSSE = ({
           : 0;
 
       const stockData: StockData = {
+        ...state,
         name,
         symbol,
         history,
-        isConnected: state.isConnected,
         chartData,
         latest,
         openPrice,

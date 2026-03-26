@@ -1,4 +1,4 @@
-import { StockData, StockHistory, StockId } from '@/types/stock';
+import { StockData, StockHistory, StockId, StockState } from '@/types/stock';
 import { useState, useEffect, useMemo } from 'react';
 
 export const useStocksWithMergeSSE = ({
@@ -6,15 +6,7 @@ export const useStocksWithMergeSSE = ({
 }: {
   stocks: StockId[];
 }): { datas: StockData[] } => {
-  const [stockState, setStockState] = useState<
-    Record<
-      string,
-      {
-        history: StockHistory[];
-        isConnected: boolean;
-      }
-    >
-  >({});
+  const [stockState, setStockState] = useState<StockState>({});
 
   useEffect(() => {
     if (!stocks.length) return;
@@ -56,7 +48,7 @@ export const useStocksWithMergeSSE = ({
 
           next[data.symbol] = {
             ...prevState,
-            history: [data, ...prevState.history],
+            history: [data, ...(prevState.history ?? [])],
           };
         });
         return next;
@@ -86,7 +78,7 @@ export const useStocksWithMergeSSE = ({
   const datas = useMemo(() => {
     return stocks.map(({ name, symbol }) => {
       const state = stockState[symbol] || { history: [], isConnected: false };
-      const history = state.history;
+      const history = state.history ?? [];
 
       const emptyPadding = Array(Math.max(0, 20 - history.length)).fill({
         time: '',

@@ -26,6 +26,7 @@ export const StockDashboard = ({
   openPrice,
   isPositiveFromOpen,
   percentFromOpen,
+  isTimeout,
 }: StockData) => {
   return (
     <Paper withBorder p='xl' radius='lg'>
@@ -71,6 +72,11 @@ export const StockDashboard = ({
                 </Text>
               </Group>
             </Group>
+          ) : !isTimeout ? (
+            <>
+              {isTimeout && 'Timeout'}
+              <Loader color='gray.4' type='dots' size='sm' />
+            </>
           ) : (
             <Center h={100}>
               <Loader color='gray.5' type='dots' />
@@ -102,7 +108,7 @@ export const StockDashboard = ({
             valueFormatter={(value) => `$${value?.toFixed(2)}`}
           />
         )}
-        {history?.slice(0, 5)?.length > 0 && (
+        {(history ?? [])?.slice(0, 5)?.length > 0 && (
           <Table verticalSpacing='sm'>
             <Table.Thead bg='gray.0'>
               <Table.Tr>
